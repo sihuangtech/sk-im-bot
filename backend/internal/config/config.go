@@ -1,7 +1,9 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -98,26 +100,42 @@ func LoadConfig(path string) (*Config, error) {
 	// 2. 自动加载系统环境变量
 	viper.AutomaticEnv()
 
-	// 3. 尝试加载 .env 文件 (仅用于本地开发，生产环境通常直接注入环境变量)
-	// 如果指定路径为空，默认尝试从当前目录加载 .env
-	if path == "" {
-		viper.AddConfigPath(".")
-		viper.SetConfigName(".env")
-		viper.SetConfigType("env")
-	} else {
-		// 如果指定了具体文件（如 config/config.yaml），则加载它
-		// 但为了支持 env 覆盖，我们仍保留读取 .env 的能力
-		// 此处逻辑修改为：优先读取 .env 文件（如果存在），再整合 System Env
-		// 原 yaml 读取逻辑保留作为 fallback 或基础配置，用户可留空
-		viper.SetConfigFile(path)
+	// 3. 手动加载 .env 到 Viper
+	// 直接读取文件并喂给 Viper，这样 Viper 内部就有具体的键值对，
+	// Unmarshal 就能正常工作，而不仅仅依赖环境变量映射。
+	envFiles := []string{".env", "../.env"}
+	var loaded bool
+	for _, file := range envFiles {
+		if content, err := os.ReadFile(file); err == nil {
+			fmt.Println("正在加载环境变量文件:", file)
+			viper.SetConfigType("env")
+			if err := viper.ReadConfig(bytes.NewBuffer(content)); err != nil {
+				fmt.Printf("警告: 解析 .env 文件失败: %v\n", err)
+			} else {
+				loaded = true
+			}
+			break
+		}
 	}
 
-	// 尝试读取配置 (文件)
-	if err := viper.ReadInConfig(); err != nil {
-		// 如果是“未找到配置文件”错误，且我们主要依赖环境变量，则不应 panic/error
-		// 但 Viper 对于 SetConfigFile 如果文件不存在会报错
-		// 我们改为: 记录警告但不中断，除非完全没有配置源
-		fmt.Printf("提示: 未在 %s 找到配置文件或 .env，将完全依赖系统环境变量: %v\n", path, err)
+	if !loaded {
+		fmt.Println("提示: 未找到 .env 文件 (将完全依赖系统环境变量)")
+	}
+
+	// 自动加载系统环境变量 (覆盖 .env 中的值，如果存在)
+	viper.AutomaticEnv()
+
+	// 4. (可选) 加载指定的 YAML 配置文件
+	// 如果用户传递了 path 且文件存在，则合并覆盖
+	if path != "" && strings.HasSuffix(path, ".yaml") {
+		viper.SetConfigFile(path)
+		viper.SetConfigType("yaml")
+		if err := viper.MergeInConfig(); err != nil {
+			// 仅当文件存在但解析失败时报错
+			if !strings.Contains(err.Error(), "no such file") && !strings.Contains(err.Error(), "The system cannot find the file specified") {
+				fmt.Printf("警告: 合并配置文件 %s 失败: %v\n", path, err)
+			}
+		}
 	}
 
 	// 将解析结果解包到内存结构体

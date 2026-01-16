@@ -14,7 +14,9 @@ import (
 func main() {
 	// 1. 加载配置文件
 	// 默认从 "config/config.yaml" 读取
-	cfg, err := config.LoadConfig("config/config.yaml")
+	// 1. 加载配置
+	// 留空以自动搜索项目根目录下的 .env 文件
+	cfg, err := config.LoadConfig("")
 	if err != nil {
 		fmt.Printf("警告: 无法加载配置文件: %v。将尝试使用默认值或环境变量。\n", err)
 		// 如果加载失败且没有默认配置，进行初始化
