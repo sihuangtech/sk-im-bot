@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sk-im-bot-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-sk-im-bot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  # go-cqhttp needs to be configured manually first or use a pre-existing session
+  # For this setup, we assume the user has a local go-cqhttp or will configure this container
+  go-cqhttp:
+    image: ghcr.io/mrs4s/go-cqhttp:master
+    container_name: sk-im-bot-gocqhttp
+    volumes:
+      - ./gocqhttp-data:/data
+    ports:
+      - "8080:8080"
+      - "5700:5700"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: sk-im-bot-backend
+    ports:
+      - "8888:8888"
+    depends_on:
+      - postgres
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-sk-im-bot}
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sk-im-bot-frontend
+    ports:
+      - "5173:80" # Nginx or similar in prod, but for dev we might map differently
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:

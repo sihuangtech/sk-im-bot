@@ -1,0 +1,51 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with Litmus
+64.out
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Editor metadata
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Private Files
+.env
+.env.local
+config/config.yaml
+!config/config.yaml.example
+app.log
+
+# Database
+postgres_data/
+
+# Bot data
+gocqhttp-data/
