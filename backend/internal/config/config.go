@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -15,6 +16,23 @@ type Config struct {
 	Discord  DiscordConfig  `mapstructure:"discord"`
 	LLM      LLMConfig      `mapstructure:"llm"`
 	Log      LogConfig      `mapstructure:"log"`
+	Admin    AdminConfig    `mapstructure:"admin"`
+
+	// Runtime only, loaded from llm_providers.yaml
+	LLMProviders map[string]LLMProviderConfig `mapstructure:"-"`
+}
+
+// LLMProviderConfig 定义单个 LLM 提供商的连接预设
+type LLMProviderConfig struct {
+	BaseURL      string   `mapstructure:"base_url"`
+	DefaultModel string   `mapstructure:"default_model"`
+	Models       []string `mapstructure:"models"`
+}
+
+// AdminConfig 定义后台管理账号配置
+type AdminConfig struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 // ServerConfig 定义管理系统的 Web 服务选项
@@ -73,20 +91,67 @@ var GlobalConfig Config
 
 // LoadConfig 使用 Viper 库加载磁盘上的 YAML 配置文件并监听环境映射
 func LoadConfig(path string) (*Config, error) {
-	viper.SetConfigFile(path)
-	viper.SetConfigType("yaml")
+	// 1. 设置环境变量替换规则: 将配置中的 "." 替换为 "_"
+	// 例如: Server.Port -> SERVER_PORT
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// 自动启用环境变量覆盖功能 (ENV 特色，支持前缀映射)
+	// 2. 自动加载系统环境变量
 	viper.AutomaticEnv()
 
-	// 尝试解析配置文件
+	// 3. 尝试加载 .env 文件 (仅用于本地开发，生产环境通常直接注入环境变量)
+	// 如果指定路径为空，默认尝试从当前目录加载 .env
+	if path == "" {
+		viper.AddConfigPath(".")
+		viper.SetConfigName(".env")
+		viper.SetConfigType("env")
+	} else {
+		// 如果指定了具体文件（如 config/config.yaml），则加载它
+		// 但为了支持 env 覆盖，我们仍保留读取 .env 的能力
+		// 此处逻辑修改为：优先读取 .env 文件（如果存在），再整合 System Env
+		// 原 yaml 读取逻辑保留作为 fallback 或基础配置，用户可留空
+		viper.SetConfigFile(path)
+	}
+
+	// 尝试读取配置 (文件)
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("读取配置文件失败: %w", err)
+		// 如果是“未找到配置文件”错误，且我们主要依赖环境变量，则不应 panic/error
+		// 但 Viper 对于 SetConfigFile 如果文件不存在会报错
+		// 我们改为: 记录警告但不中断，除非完全没有配置源
+		fmt.Printf("提示: 未在 %s 找到配置文件或 .env，将完全依赖系统环境变量: %v\n", path, err)
 	}
 
 	// 将解析结果解包到内存结构体
 	if err := viper.Unmarshal(&GlobalConfig); err != nil {
 		return nil, fmt.Errorf("反序列化配置失败: %w", err)
+	}
+
+	// 4. 单独加载 LLM 模型提供商配置 (backend/config/llm_providers.yaml)
+	// 我们使用一个新的 viper 实例来避免与主配置混淆，或者将其合并到 map 中
+	providerViper := viper.New()
+	providerViper.SetConfigFile("config/llm_providers.yaml")
+	providerViper.SetConfigType("yaml")
+
+	if err := providerViper.ReadInConfig(); err == nil {
+		var providerConfig struct {
+			Providers map[string]LLMProviderConfig `mapstructure:"providers"`
+		}
+		if err := providerViper.Unmarshal(&providerConfig); err == nil {
+			GlobalConfig.LLMProviders = providerConfig.Providers
+			fmt.Println("成功加载 LLM 提供商预设配置")
+		} else {
+			fmt.Printf("警告: 解析 llm_providers.yaml 失败: %v\n", err)
+		}
+	} else {
+		// 可能是生产环境路径不同，尝试从当前目录加载
+		providerViper.SetConfigFile("llm_providers.yaml")
+		if err := providerViper.ReadInConfig(); err == nil {
+			var providerConfig struct {
+				Providers map[string]LLMProviderConfig `mapstructure:"providers"`
+			}
+			if err := providerViper.Unmarshal(&providerConfig); err == nil {
+				GlobalConfig.LLMProviders = providerConfig.Providers
+			}
+		}
 	}
 
 	return &GlobalConfig, nil

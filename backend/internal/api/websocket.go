@@ -11,29 +11,29 @@ import (
 	"go.uber.org/zap"
 )
 
-// Client represents a connected WebSocket client
+// Client 代表一个已连接的 WebSocket 客户端
 type Client struct {
 	Hub  *Hub
 	Conn *websocket.Conn
 	Send chan []byte
 }
 
-// Hub maintains the set of active clients and broadcasts messages to the clients.
+// Hub 负责维护活跃客户端集合并向客户端广播消息。
 type Hub struct {
-	// Registered clients.
+	// 已注册的客户端。
 	Clients map[*Client]bool
 
-	// Inbound messages from the clients.
+	// 来自客户端的入站消息。
 	Broadcast chan []byte
 
-	// Register requests from the clients.
+	// 来自客户端的注册请求。
 	Register chan *Client
 
-	// Unregister requests from clients.
+	// 来自客户端的注销请求。
 	Unregister chan *Client
 }
 
-// WSHub is the global WebSocket hub instance
+// WSHub 是全局 WebSocket hub 实例
 var WSHub = &Hub{
 	Broadcast:  make(chan []byte),
 	Register:   make(chan *Client),
@@ -41,19 +41,19 @@ var WSHub = &Hub{
 	Clients:    make(map[*Client]bool),
 }
 
-// Run handles the hub's main loop
+// Run 处理 hub 的主循环
 func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.Register:
 			h.Clients[client] = true
-			utils.Logger.Info("WebSocket client connected")
+			utils.Logger.Info("WebSocket 客户端已连接")
 		case client := <-h.Unregister:
 			if _, ok := h.Clients[client]; ok {
 				delete(h.Clients, client)
 				close(client.Send)
 			}
-			utils.Logger.Info("WebSocket client disconnected")
+			utils.Logger.Info("WebSocket 客户端已断开连接")
 		case message := <-h.Broadcast:
 			for client := range h.Clients {
 				select {
@@ -69,15 +69,15 @@ func (h *Hub) Run() {
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for development
+		return true // 开发环境下允许所有跨域请求
 	},
 }
 
-// WSHandler handles WebSocket requests from the peer.
+// WSHandler 处理来自对端的 WebSocket 请求。
 func WSHandler(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		utils.Logger.Error("Failed to upgrade WebSocket connection", zap.Error(err))
+		utils.Logger.Error("WebSocket 连接升级失败", zap.Error(err))
 		return
 	}
 	client := &Client{Hub: WSHub, Conn: conn, Send: make(chan []byte, 256)}
@@ -87,7 +87,7 @@ func WSHandler(c *gin.Context) {
 	go client.readPump()
 }
 
-// readPump pumps messages from the websocket connection to the hub.
+// readPump 将消息从 websocket 连接泵送到 hub。
 func (c *Client) readPump() {
 	defer func() {
 		c.Hub.Unregister <- c
@@ -97,14 +97,14 @@ func (c *Client) readPump() {
 		_, _, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				utils.Logger.Error("WebSocket error", zap.Error(err))
+				utils.Logger.Error("WebSocket 错误", zap.Error(err))
 			}
 			break
 		}
 	}
 }
 
-// writePump pumps messages from the hub to the websocket connection.
+// writePump 将消息从 hub 泵送到 websocket 连接。
 func (c *Client) writePump() {
 	defer func() {
 		c.Conn.Close()
@@ -116,7 +116,7 @@ func (c *Client) writePump() {
 		}
 		w.Write(message)
 
-		// Add queued chat messages to the current websocket message.
+		// 将队列中的聊天消息添加到当前的 websocket 消息中。
 		n := len(c.Send)
 		for i := 0; i < n; i++ {
 			w.Write(<-c.Send)
@@ -129,11 +129,11 @@ func (c *Client) writePump() {
 	c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 }
 
-// BroadcastEvent sends an event to all connected clients
+// BroadcastEvent 向所有连接的客户端发送事件
 func BroadcastEvent(event interface{}) {
 	jsonBytes, err := json.Marshal(event)
 	if err != nil {
-		utils.Logger.Error("Failed to marshal broadcast event", zap.Error(err))
+		utils.Logger.Error("序列化广播事件失败", zap.Error(err))
 		return
 	}
 	WSHub.Broadcast <- jsonBytes

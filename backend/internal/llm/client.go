@@ -19,7 +19,18 @@ func NewLLMClient(cfg config.LLMConfig) *LLMClient {
 	// 使用 SDK 默认配置，注入用户提供的 API Key
 	openaiConfig := openai.DefaultConfig(cfg.APIKey)
 
-	// 如果配置了自定义网关（代理地址），则修改默认的 API 端点
+	// 1. 检查是否使用了预设的 Provider (如 deepseek, moonshot)
+	// 如果配置中未显式指定 BaseURL，则尝试从 GlobalConfig.LLMProviders 中查找默认值
+	if preset, ok := config.GlobalConfig.LLMProviders[cfg.Provider]; ok {
+		if cfg.BaseURL == "" {
+			cfg.BaseURL = preset.BaseURL
+		}
+		if cfg.Model == "" {
+			cfg.Model = preset.DefaultModel
+		}
+	}
+
+	// 2. 如果配置了自定义网关（代理地址），则修改默认的 API 端点
 	if cfg.BaseURL != "" {
 		openaiConfig.BaseURL = cfg.BaseURL
 	}

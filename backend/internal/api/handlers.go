@@ -23,9 +23,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 演示目的：使用硬编码的凭据 (admin/admin)。
-	// 在正式生产环境中，应查库比对哈希后的密码。
-	if body.Username == "admin" && body.Password == "admin" {
+	// 从配置中读取管理员账号密码 (支持环境变量注入 ADMIN_USERNAME, ADMIN_PASSWORD)
+	adminUser := config.GlobalConfig.Admin.Username
+	adminPass := config.GlobalConfig.Admin.Password
+
+	if body.Username == adminUser && body.Password == adminPass {
 		// 校验成功，生成 JWT Token，有效期 24 小时
 		token, err := utils.GenerateToken(1, "admin", config.GlobalConfig.JWT.Secret, 24*time.Hour)
 		if err != nil {

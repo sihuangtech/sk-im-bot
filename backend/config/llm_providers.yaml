@@ -1,0 +1,158 @@
+providers:
+  # 1. DeepSeek (深度求索) - 中国开源/闭源模型领跑者
+  # 官网: https://platform.deepseek.com/
+  deepseek:
+    base_url: "https://api.deepseek.com"
+    default_model: "deepseek-chat"
+    models:
+      - "deepseek-chat"      # DeepSeek-V3: 高性价比主力模型
+      - "deepseek-reasoner"  # DeepSeek-R1: 推理增强 (Chain-of-Thought)
+
+  # 2. Moonshot AI (月之暗面 / Kimi)
+  # 官网: https://platform.moonshot.cn/
+  moonshot:
+    base_url: "https://api.moonshot.cn/v1"
+    default_model: "moonshot-v1-auto"
+    models:
+      - "moonshot-v1-auto"   # 自动选择上下文长度
+      - "moonshot-v1-8k"
+      - "moonshot-v1-32k"
+      - "moonshot-v1-128k"
+      - "moonshot-k2"        # K2: 新一代多模态大模型 (预览)
+
+  # 3. Zhipu AI (智谱 GLM)
+  # 官网: https://open.bigmodel.cn/
+  zhipu:
+    base_url: "https://open.bigmodel.cn/api/paas/v4/"
+    default_model: "glm-4-plus"
+    models:
+      - "glm-4-plus"      # GLM-4 旗舰增强版
+      - "glm-4-0520"      # GLM-4 高性能版
+      - "glm-4-air"       # 性价比模型
+      - "glm-4-flash"     # 极速版
+      - "glm-4.5-preview" # 4.5 预览版
+
+  # 4. Qwen (阿里通义千问)
+  # 官网: https://dashscope.console.aliyun.com/
+  qwen:
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    default_model: "qwen-plus"
+    models:
+      - "qwen-max"        # 千问-Max (旗舰)
+      - "qwen-plus"       # 千问-Plus (均衡)
+      - "qwen-turbo"      # 千问-Turbo (速度)
+      - "qwen2.5-72b-instruct" # 开源版托管
+      - "qwen2.5-coder-32b-instruct" # 编程专用
+
+  # 5. Yi (零一万物)
+  # 官网: https://platform.lingyiwanwu.com/
+  yi:
+    base_url: "https://api.lingyiwanwu.com/v1"
+    default_model: "yi-large"
+    models:
+      - "yi-large"        # Yi-Large 主模型
+      - "yi-medium"
+      - "yi-spark"
+      - "yi-lightning"    # 新一代极速模型
+
+  # 6. Baichuan (百川智能)
+  # 官网: https://platform.baichuan-ai.com/
+  baichuan:
+    base_url: "https://api.baichuan-ai.com/v1"
+    default_model: "baichuan-4"
+    models:
+      - "baichuan-4"      # 百川4 (当前旗舰)
+      - "baichuan-3-turbo"
+      - "baichuan2-turbo"
+
+  # 7. MiniMax (海螺 AI)
+  # 官网: https://platform.minimaxi.com/
+  minimax:
+    base_url: "https://api.minimax.chat/v1"
+    default_model: "abab6.5s-chat"
+    models:
+      - "abab6.5s-chat"   # 海螺 6.5s 高速版
+      - "abab6.5-chat"    # 海螺 6.5 通用版
+      - "abab6-chat"
+
+  # 8. Hunyuan (腾讯混元)
+  # 官网: https://cloud.tencent.com/product/hunyuan
+  hunyuan:
+    base_url: "https://api.hunyuan.cloud.tencent.com/v1"
+    default_model: "hunyuan-pro"
+    models:
+      - "hunyuan-pro"     # 混元专业版 (万亿参数)
+      - "hunyuan-standard"
+      - "hunyuan-lite"
+
+  # 9. StepFun (阶跃星辰)
+  # 官网: https://platform.stepfun.com/
+  stepfun:
+    base_url: "https://api.stepfun.com/v1"
+    default_model: "step-2-16k"
+    models:
+      - "step-2-16k"      # Step-2 万亿参数主力
+      - "step-1-8k"
+      - "step-1-32k"
+
+  # 10. OpenAI (国际标准)
+  openai:
+    base_url: "https://api.openai.com/v1"
+    default_model: "gpt-5.2"
+    models:
+      - "gpt-5.2"             # 超强推理与Agent能力
+      - "gpt-5.2-coder"       # 编程专用优化版
+      - "gpt-5-mini"          # 极速轻量版
+      - "gpt-5-nano"          # 极致低成本版
+      - "gpt-4.5-turbo"       # GPT-4 架构的最终优化形态
+      - "o1-pro"              # 推理增强专业版 (o1-preview 的正式升级)
+
+  # 11. Anthropic (Claude)
+  claude:
+    base_url: "https://api.anthropic.com/v1"
+    default_model: "claude-opus-4-5-20251101"
+    models:
+      - "claude-opus-4-5-20251101"   # Opus 4.5: 2026最强推理与编码模型
+      - "claude-sonnet-4-5-20251101" # Sonnet 4.5: 性能与速度的完美平衡
+      - "claude-3-7-sonnet-latest"   # Sonnet 3.7: 经典高性价比之选
+
+  # 12. Google Gemini
+  # 通过 OpenAI 兼容端点访问
+  gemini:
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    default_model: "gemini-3-pro-preview"
+    models:
+      - "gemini-3-pro-preview"      # Gemini 3 Pro: 谷歌最强多模态
+      - "gemini-3-flash-preview"    # Gemini 3 Flash: 极速版
+      - "gemini-2.5-pro"            # Gemini 2.5 Pro 稳定版
+      - "gemini-2.5-flash"          # Gemini 2.5 Flash 稳定版
+      - "gemini-2.5-flash-lite"     # Gemini 2.5 Flash 极速版
+
+  # 13. Grok (xAI)
+  # 官网: https://console.x.ai/
+  grok:
+    base_url: "https://api.x.ai/v1"
+    default_model: "grok-4-1-fast"
+    models:
+      - "grok-4-1-fast-reasoning"   # Grok 4.1 Fast 推理版
+      - "grok-4-1-fast-non-reasoning"
+      - "grok-4-regular"            # Grok 4 标准版 (256k 上下文)
+      - "grok-2-image-1212"         # 图像生成模型
+
+  # 14. Groq (LPU 推理加速)
+  groq:
+    base_url: "https://api.groq.com/openai/v1"
+    default_model: "llama-3.3-70b-versatile"
+    models:
+      - "llama-3.3-70b-versatile"
+      - "mixtral-8x7b-32768"
+
+  # 15. Ollama (本地运行)
+  # 官网: https://ollama.com/
+  ollama:
+    base_url: "http://localhost:11434/v1"
+    default_model: "llama3.2"
+    models:
+      - "llama3.2"
+      - "qwen2.5"
+      - "deepseek-r1"
